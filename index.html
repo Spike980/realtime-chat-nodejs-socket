@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Socket.IO chat</title>
+	 <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #status {  position: fixed; bottom: width: 100%; bottom: 50px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; width: 85%; box-sizing: border-box; display: inline-block; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      .notice { color: #777; }
+      #online_list { float:right;  font-size: 2em; font-weight: 400; color: #777; padding: 1.3em; border-left: 2px solid #888; min-height: 25em; min-width: 15%; box-sizing: border-box; }
+      #online_list ul { list-style-type: disc;  }
+      #online_list li { color: green;  }
+      #online_list span { color: #777;  }
+    </style>
+</head>
+<body>
+	<ul id="messages"></ul>
+	<form action="">
+		<input id="m" autocomplete="off" />
+		<button>Send</button>
+	</form>
+	<div id="online_list">
+		<ul id="list">
+		</ul>
+	</div>
+	<h4 id="status"></h4>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+	<script>
+		var socket = io();
+		console.log("here");
+		var name = prompt("Enter Your Nick Name");
+		socket.emit('new user', name);
+		$('form').submit(function() {
+			var val = $('#m').val();
+			socket.emit('chat message', val);
+			$('#messages').append($('<li>').text(val));
+			$('#m').val('');
+			return false;
+		});
+
+		$('#m').change(function() {
+			socket.emit('message status', name + " is typing...");
+		});
+
+		socket.on('chat message', function(msg) {
+			$('#messages').append($('<li>').text(msg));
+		});
+
+		socket.on('user disconnect', function(users, name) {
+			$('#messages').append($('<li class="notice">').text(name + ' disconnected'));
+			$('#list').empty();
+			users.forEach(function(user) {
+				$('#list').append("<li><span>" + user + "</span></li>");
+			});
+		});
+
+		socket.on('new user', function(users) {
+			$('#list').empty();
+			users.forEach(function(user) {
+				$('#list').append("<li><span>" + user + "</span></li>");
+			});
+		});
+
+		socket.on('message status', function(msg) {
+			$('#status').empty();
+			$('#status').append($('<li class="notice">').text(msg));
+			setTimeout(function() {
+					$('#status').empty();
+			}, 3000);
+		});
+
+		socket.on('user add', function(user) {
+			$('#messages').append($('<li>').text(user + ' has joined'));
+		});
+
+
+	</script>
+</body>
+</html>
